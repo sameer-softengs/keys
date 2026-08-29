@@ -1,9 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  
+  // Only trigger web fallback when on public hosting (wscodework.me or github.io)
   const isHostedWeb =
     window.location.hostname === "wscodework.me" ||
-    window.location.hostname.endsWith("github.io") ||
-    (window.location.hostname === "localhost" && window.location.port !== "3000");
+    window.location.hostname.endsWith("github.io");
 
   const desktopUI = document.getElementById("desktopUI");
   const mobileUI = document.getElementById("mobileUI");
