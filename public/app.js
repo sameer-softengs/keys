@@ -1,5 +1,11 @@
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+// Hide QR container if accessed over web deployment rather than local app server
+if (window.location.hostname === "wscodework.me" || window.location.hostname.endsWith("github.io")) {
+  const qrSection = document.getElementById("qrSection");
+  if (qrSection) qrSection.style.display = "none";
+} 
+
 if (isMobile) {
   document.getElementById('desktopUI').style.display = 'none';
   document.getElementById('mobileUI').style.display = 'flex';
