@@ -1,54 +1,87 @@
-const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+document.addEventListener("DOMContentLoaded", () => {
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isHostedWeb =
+    window.location.hostname === "wscodework.me" ||
+    window.location.hostname.endsWith("github.io") ||
+    (window.location.hostname === "localhost" && window.location.port !== "3000");
 
-// Hide QR container if accessed over web deployment rather than local app server
-if (window.location.hostname === "wscodework.me" || window.location.hostname.endsWith("github.io")) {
+  const desktopUI = document.getElementById("desktopUI");
+  const mobileUI = document.getElementById("mobileUI");
   const qrSection = document.getElementById("qrSection");
-  if (qrSection) qrSection.style.display = "none";
-} 
+  const fallbackNotice = document.getElementById("fallbackNotice");
 
-if (isMobile) {
-  document.getElementById('desktopUI').style.display = 'none';
-  document.getElementById('mobileUI').style.display = 'flex';
-  initMobileRemote();
-} else {
-  fetch('/api/status')
-    .then(res => res.json())
-    .then(data => {
-      if (data.running) {
-        document.getElementById('qrImage').src = `/api/qrcode?url=${encodeURIComponent(data.mobileUrl)}`;
-        document.getElementById('mobileUrlText').innerText = data.mobileUrl;
-      }
-    })
-    .catch(() => {});
+  // Handle Mobile vs Desktop UI layout
+  if (isMobile) {
+    if (desktopUI) desktopUI.style.display = "none";
+    if (mobileUI) mobileUI.style.display = "flex";
+    initMobileRemote();
+  } else {
+    // Handle Public Web deployment vs Local App Server
+    if (isHostedWeb) {
+      if (qrSection) qrSection.style.display = "none";
+      if (fallbackNotice) fallbackNotice.style.display = "block";
+    } else {
+      if (fallbackNotice) fallbackNotice.style.display = "none";
+      fetchQR();
+    }
+  }
+});
+
+// Fetch QR Code from Local App Server
+function fetchQR() {
+  const qrImg = document.getElementById("qrImage");
+  const urlText = document.getElementById("mobileUrlText");
+
+  if (!qrImg || !urlText) return;
+
+  const localUrl = window.location.origin;
+  urlText.innerText = localUrl;
+  qrImg.src = `/qr?url=${encodeURIComponent(localUrl)}`;
+
+  qrImg.onerror = () => {
+    const qrSection = document.getElementById("qrSection");
+    const fallbackNotice = document.getElementById("fallbackNotice");
+    if (qrSection) qrSection.style.display = "none";
+    if (fallbackNotice) fallbackNotice.style.display = "block";
+  };
 }
 
+// 1-Click Copy with Cross-Browser HTTP/HTTPS Fallback
 function copyCmd(elementId, btnElement) {
-  const text = document.getElementById(elementId).innerText;
+  const targetEl = document.getElementById(elementId);
+  if (!targetEl) return;
+  const text = targetEl.innerText;
 
-  // Use Clipboard API if available (HTTPS / Localhost)
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => showSuccess(btnElement));
+    navigator.clipboard
+      .writeText(text)
+      .then(() => showSuccess(btnElement))
+      .catch(() => fallbackCopy(text, btnElement));
   } else {
-    // Fallback for HTTP / IP addresses
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-999999px";
-    document.body.appendChild(textArea);
-    textArea.select();
-    
-    try {
-      document.execCommand('copy');
-      showSuccess(btnElement);
-    } catch (err) {
-      console.error('Copy failed', err);
-    } finally {
-      document.body.removeChild(textArea);
-    }
+    fallbackCopy(text, btnElement);
+  }
+}
+
+function fallbackCopy(text, btnElement) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  textArea.style.left = "-999999px";
+  document.body.appendChild(textArea);
+  textArea.select();
+
+  try {
+    document.execCommand("copy");
+    showSuccess(btnElement);
+  } catch (err) {
+    console.error("Copy failed", err);
+  } finally {
+    document.body.removeChild(textArea);
   }
 }
 
 function showSuccess(btnElement) {
+  if (!btnElement) return;
   btnElement.innerText = "Copied!";
   btnElement.classList.add("copied");
   setTimeout(() => {
@@ -57,33 +90,36 @@ function showSuccess(btnElement) {
   }, 2000);
 }
 
+// Mobile WebSocket Remote Logic
 function initMobileRemote() {
-  const statusEl = document.getElementById('status');
-  const statusDot = document.getElementById('statusDot');
+  const statusEl = document.getElementById("status");
+  const statusDot = document.getElementById("statusDot");
   let ws = null;
   let reconnectInterval = null;
 
   // Retrieve or generate persistent session token
-  let sessionToken = localStorage.getItem('cyber_remote_session');
+  let sessionToken = localStorage.getItem("cyber_remote_session");
   if (!sessionToken) {
-    sessionToken = 'sess_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
-    localStorage.setItem('cyber_remote_session', sessionToken);
+    sessionToken =
+      "sess_" + Math.random().toString(36).substring(2) + Date.now().toString(36);
+    localStorage.setItem("cyber_remote_session", sessionToken);
   }
 
   // Auto-connect Function
   function connectWebSocket() {
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
     ws = new WebSocket(`${protocol}//${location.host}/ws?session=${sessionToken}`);
 
     ws.onopen = () => {
-      statusEl.innerText = "CONNECTED";
-      statusEl.style.color = "#00ff88";
-      if (statusDot) statusDot.classList.add('online');
-      
-      // Send auth handshake with session token
-      ws.send(JSON.stringify({ type: 'AUTH_SESSION', token: sessionToken }));
+      if (statusEl) {
+        statusEl.innerText = "CONNECTED";
+        statusEl.style.color = "#10b981";
+      }
+      if (statusDot) statusDot.classList.add("online");
 
-      // Clear reconnect loop if connected
+      // Send auth handshake with session token
+      ws.send(JSON.stringify({ type: "AUTH_SESSION", token: sessionToken }));
+
       if (reconnectInterval) {
         clearInterval(reconnectInterval);
         reconnectInterval = null;
@@ -91,11 +127,12 @@ function initMobileRemote() {
     };
 
     ws.onclose = () => {
-      statusEl.innerText = "RECONNECTING...";
-      statusEl.style.color = "#ff3b30";
-      if (statusDot) statusDot.classList.remove('online');
+      if (statusEl) {
+        statusEl.innerText = "RECONNECTING...";
+        statusEl.style.color = "#ef4444";
+      }
+      if (statusDot) statusDot.classList.remove("online");
 
-      // Attempt automatic reconnect every 2 seconds if connection drops
       if (!reconnectInterval) {
         reconnectInterval = setInterval(() => {
           connectWebSocket();
@@ -115,9 +152,9 @@ function initMobileRemote() {
 
   function getModifiersList() {
     const list = [];
-    if (activeModifiers.ctrl) list.push('ctrl');
-    if (activeModifiers.alt) list.push('alt');
-    if (activeModifiers.shift) list.push('shift');
+    if (activeModifiers.ctrl) list.push("ctrl");
+    if (activeModifiers.alt) list.push("alt");
+    if (activeModifiers.shift) list.push("shift");
     return list;
   }
 
@@ -125,100 +162,110 @@ function initMobileRemote() {
     activeModifiers.ctrl = false;
     activeModifiers.alt = false;
     activeModifiers.shift = false;
-    document.querySelectorAll('.key.modifier').forEach(b => b.classList.remove('active'));
+    document
+      .querySelectorAll(".key.modifier")
+      .forEach((b) => b.classList.remove("active"));
   }
 
-  function sendKey(key, action = 'KEY_SPECIAL') {
+  function sendKey(key, action = "KEY_SPECIAL") {
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ 
-        type: action, 
-        key: key,
-        modifiers: getModifiersList()
-      }));
+      ws.send(
+        JSON.stringify({
+          type: action,
+          key: key,
+          modifiers: getModifiersList(),
+        })
+      );
       clearModifiers();
     }
   }
 
-  // --- Trackpad Logic ---
-  const trackpad = document.getElementById('trackpad');
-  let lastX = 0, lastY = 0;
+  // --- Trackpad Touch Controls ---
+  const trackpad = document.getElementById("trackpad");
+  let lastX = 0,
+    lastY = 0;
   let isPointerDown = false;
   let touchStartTime = 0;
   let isMoving = false;
 
-  trackpad.addEventListener('pointerdown', (e) => {
-    trackpad.setPointerCapture(e.pointerId);
-    isPointerDown = true;
-    lastX = e.clientX;
-    lastY = e.clientY;
-    touchStartTime = Date.now();
-    isMoving = false;
-  });
+  if (trackpad) {
+    trackpad.addEventListener("pointerdown", (e) => {
+      trackpad.setPointerCapture(e.pointerId);
+      isPointerDown = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      touchStartTime = Date.now();
+      isMoving = false;
+    });
 
-  trackpad.addEventListener('pointermove', (e) => {
-    if (!isPointerDown) return;
+    trackpad.addEventListener("pointermove", (e) => {
+      if (!isPointerDown) return;
 
-    const dx = Math.round((e.clientX - lastX) * 2.5);
-    const dy = Math.round((e.clientY - lastY) * 2.5);
-    lastX = e.clientX;
-    lastY = e.clientY;
+      const dx = Math.round((e.clientX - lastX) * 2.5);
+      const dy = Math.round((e.clientY - lastY) * 2.5);
+      lastX = e.clientX;
+      lastY = e.clientY;
 
-    if (Math.abs(dx) > 0 || Math.abs(dy) > 0) {
-      isMoving = true;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'MOUSE_MOVE', dx: dx, dy: dy }));
+      if (Math.abs(dx) > 0 || Math.abs(dy) > 0) {
+        isMoving = true;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "MOUSE_MOVE", dx: dx, dy: dy }));
+        }
       }
-    }
-  });
+    });
 
-  trackpad.addEventListener('pointerup', () => {
-    isPointerDown = false;
-    const duration = Date.now() - touchStartTime;
-    if (!isMoving && ws && ws.readyState === WebSocket.OPEN) {
-      if (duration > 450) {
-        ws.send(JSON.stringify({ type: 'MOUSE_CLICK', button: 'right' }));
-      } else {
-        ws.send(JSON.stringify({ type: 'MOUSE_CLICK', button: 'left' }));
+    trackpad.addEventListener("pointerup", () => {
+      isPointerDown = false;
+      const duration = Date.now() - touchStartTime;
+      if (!isMoving && ws && ws.readyState === WebSocket.OPEN) {
+        if (duration > 450) {
+          ws.send(JSON.stringify({ type: "MOUSE_CLICK", button: "right" }));
+        } else {
+          ws.send(JSON.stringify({ type: "MOUSE_CLICK", button: "left" }));
+        }
       }
-    }
-  });
+    });
+  }
 
-  // --- Keyboard Input ---
-  const input = document.getElementById('keyboardInput');
+  // --- Native Keyboard Input ---
+  const input = document.getElementById("keyboardInput");
+  if (input) {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace") sendKey("backspace", "KEY_SPECIAL");
+      else if (e.key === "Enter") sendKey("enter", "KEY_SPECIAL");
+    });
 
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace') sendKey('backspace', 'KEY_SPECIAL');
-    else if (e.key === 'Enter') sendKey('enter', 'KEY_SPECIAL');
-  });
-
-  input.addEventListener('input', (e) => {
-    if (e.data) sendKey(e.data, 'KEY_PRESS');
-    input.value = '';
-  });
+    input.addEventListener("input", (e) => {
+      if (e.data) sendKey(e.data, "KEY_PRESS");
+      input.value = "";
+    });
+  }
 
   // --- Modifier Buttons ---
-  document.querySelectorAll('.key.modifier').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const mod = btn.getAttribute('data-mod');
+  document.querySelectorAll(".key.modifier").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const mod = btn.getAttribute("data-mod");
       activeModifiers[mod] = !activeModifiers[mod];
-      btn.classList.toggle('active', activeModifiers[mod]);
+      btn.classList.toggle("active", activeModifiers[mod]);
     });
   });
 
   // --- Standard Keys ---
-  document.querySelectorAll('.key:not(.modifier):not(.holdable)').forEach(btn => {
-    btn.addEventListener('click', () => {
-      sendKey(btn.getAttribute('data-key'), 'KEY_SPECIAL');
+  document
+    .querySelectorAll(".key:not(.modifier):not(.holdable)")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        sendKey(btn.getAttribute("data-key"), "KEY_SPECIAL");
+      });
     });
-  });
 
-  // --- Holdable Backspace ---
-  const backspaceBtn = document.getElementById('backspaceBtn');
+  // --- Holdable Backspace Button ---
+  const backspaceBtn = document.getElementById("backspaceBtn");
   let holdInterval = null;
 
   function startHold() {
-    sendKey('backspace', 'KEY_SPECIAL');
-    holdInterval = setInterval(() => sendKey('backspace', 'KEY_SPECIAL'), 90);
+    sendKey("backspace", "KEY_SPECIAL");
+    holdInterval = setInterval(() => sendKey("backspace", "KEY_SPECIAL"), 90);
   }
 
   function stopHold() {
@@ -228,7 +275,9 @@ function initMobileRemote() {
     }
   }
 
-  backspaceBtn.addEventListener('pointerdown', startHold);
-  backspaceBtn.addEventListener('pointerup', stopHold);
-  backspaceBtn.addEventListener('pointercancel', stopHold);
+  if (backspaceBtn) {
+    backspaceBtn.addEventListener("pointerdown", startHold);
+    backspaceBtn.addEventListener("pointerup", stopHold);
+    backspaceBtn.addEventListener("pointercancel", stopHold);
+  }
 }

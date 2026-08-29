@@ -3,21 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <title>CyberRemote Pro</title>
+  
+  <!-- SEO Meta Tags -->
+  <title>CyberRemote Pro | Free Open Source Trackpad & Virtual Keyboard</title>
+  <meta name="description" content="Turn your phone into a wireless trackpad, mouse, and keyboard for Ubuntu Linux and Windows via local Wi-Fi. Free, low-latency, and zero setup required.">
+  <meta name="keywords" content="remote mouse, wifi trackpad, virtual keyboard linux, ubuntu remote control, phone as mouse">
+  <link rel="canonical" href="http://wscodework.me/keys/">
+
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="CyberRemote Pro - Phone to PC Wi-Fi Controller">
+  <meta property="og:description" content="Control your desktop cursor and keyboard directly from your smartphone over local Wi-Fi.">
+  <meta property="og:url" content="http://wscodework.me/keys/">
+
+  <!-- Fonts & Styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+
+  <!-- AEO JSON-LD Schema (SoftwareApplication & HowTo) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "CyberRemote Pro",
+    "operatingSystem": "Linux, Windows, macOS",
+    "applicationCategory": "UtilityApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "Convert your mobile phone into a wireless trackpad and keyboard for Linux and Windows over Wi-Fi."
+  }
+  </script>
 </head>
 <body>
 
-  <!-- DESKTOP DASHBOARD & INSTALLATION UI -->
+  <!-- DESKTOP DASHBOARD & LANDING PAGE -->
   <div id="desktopUI" class="glass-panel container">
     <div class="brand-badge"><span class="pulse-dot"></span> SYSTEM ONLINE</div>
-    <h1>CYBER<span class="highlight">REMOTE</span></h1>
-    <p class="subtitle">Scan the QR code with your mobile device on the local network to pair controller.</p>
+    <h1>CYBER<span class="highlight">REMOTE</span> PRO</h1>
+    <p class="subtitle">Turn your mobile phone into a wireless trackpad and keyboard for your desktop computer over local Wi-Fi.</p>
     
-    <!-- QR Pair Section -->
+    <!-- Active Pair Section (Shows only when app is running locally) -->
     <div id="qrSection" class="qr-container">
       <div class="qr-wrapper">
         <img id="qrImage" src="" alt="Pairing QR Code">
@@ -25,9 +55,16 @@
       <p id="mobileUrlText" class="url-badge"></p>
     </div>
 
-    <!-- Terminal Installation Section -->
+    <!-- Web Visitor Fallback Banner (Shows when accessed over public web) -->
+    <div id="fallbackNotice" class="web-banner" style="display: none;">
+      <div class="banner-icon">💡</div>
+      <h3>Desktop Host Not Detected</h3>
+      <p>To use CyberRemote Pro, you must first install and launch the host application on your laptop or PC using the command below.</p>
+    </div>
+
+    <!-- One-Line Terminal Installation -->
     <div class="install-section">
-      <h3 class="install-title">⚡ One-Line Terminal Install</h3>
+      <h2 class="install-title">⚡ 1-Line Terminal Install</h2>
       
       <!-- Linux / macOS -->
       <div class="cmd-box">
@@ -47,11 +84,20 @@
         <code class="cmd-code" id="winCmd">iwr -useb http://wscodework.me/keys/install.ps1 | iex</code>
       </div>
     </div>
+
+    <!-- How It Works Section (AEO & SEO Friendly) -->
+    <section class="guide-section">
+      <h2>How CyberRemote Pro Works</h2>
+      <ol class="steps-list">
+        <li><strong>Run Installer:</strong> Copy and paste the 1-line installation command into your computer's terminal.</li>
+        <li><strong>Launch Host:</strong> The app automatically boots in the background and opens the pairing dashboard.</li>
+        <li><strong>Scan & Connect:</strong> Point your smartphone camera at the displayed QR code to instantly start controlling your PC.</li>
+      </ol>
+    </section>
   </div>
 
   <!-- MOBILE CONTROLLER UI -->
   <div id="mobileUI">
-    <!-- Interactive Trackpad -->
     <div id="trackpad">
       <div class="trackpad-hud">
         <div class="hud-crosshair"></div>
@@ -59,7 +105,6 @@
       </div>
     </div>
     
-    <!-- Control Deck -->
     <div class="control-deck">
       <div class="status-bar">
         <div class="status-indicator">
@@ -69,14 +114,11 @@
         <div class="brand-tag">v2.0 PRO</div>
       </div>
       
-      <!-- Quick Input Field -->
       <div class="input-wrapper">
         <input type="text" id="keyboardInput" placeholder="Tap to trigger native keyboard..." autocomplete="off">
       </div>
 
-      <!-- Cyber Keyboard Grid -->
       <div class="virtual-keyboard">
-        <!-- Scrollable F-Keys -->
         <div class="kb-row f-keys">
           <button class="key f-key" data-key="f1">F1</button>
           <button class="key f-key" data-key="f2">F2</button>
@@ -92,7 +134,6 @@
           <button class="key f-key" data-key="f12">F12</button>
         </div>
 
-        <!-- Modifiers Row -->
         <div class="kb-row">
           <button class="key modifier" data-mod="ctrl" id="ctrlBtn">CTRL</button>
           <button class="key modifier" data-mod="alt" id="altBtn">ALT</button>
@@ -100,7 +141,6 @@
           <button class="key action-key holdable danger-glow" data-key="backspace" id="backspaceBtn">⌫ DEL</button>
         </div>
 
-        <!-- Navigation Row -->
         <div class="kb-row">
           <button class="key" data-key="esc">ESC</button>
           <button class="key" data-key="tab">TAB</button>
@@ -111,7 +151,6 @@
           <button class="key action-key accent-glow" data-key="enter">↵ ENTER</button>
         </div>
 
-        <!-- Spacebar Row -->
         <div class="kb-row">
           <button class="key wide" data-key="space">SPACE</button>
         </div>

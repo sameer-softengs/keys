@@ -410,3 +410,58 @@ h1 {
 
 .wide { flex: 3; }
 .action-key { flex: 1.4; }
+/* Web Fallback Banner */
+.web-banner {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.banner-icon {
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+
+.web-banner h3 {
+  font-size: 14px;
+  color: var(--accent-blue);
+  margin-bottom: 4px;
+}
+
+.web-banner p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* SEO How-To Guide Section */
+.guide-section {
+  border-top: 1px solid var(--border-color);
+  margin-top: 28px;
+  padding-top: 24px;
+  text-align: left;
+}
+
+.guide-section h2 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.steps-list {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.steps-list strong {
+  color: var(--accent-blue);
+}
