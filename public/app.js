@@ -37,7 +37,8 @@ function fetchQR() {
 
   const localUrl = window.location.origin;
   urlText.innerText = localUrl;
-  qrImg.src = `/qr?url=${encodeURIComponent(localUrl)}`;
+  // Point to /api/qrcode matching your Go backend
+  qrImg.src = `/api/qrcode?url=${encodeURIComponent(localUrl)}`;
 
   qrImg.onerror = () => {
     const qrSection = document.getElementById("qrSection");
