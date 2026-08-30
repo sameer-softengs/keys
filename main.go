@@ -39,7 +39,7 @@ type InputMessage struct {
 
 func main() {
 	localIP := getLocalIP()
-	port := "3000"
+	port := "3020"
 	mobileURL := fmt.Sprintf("http://%s:%s", localIP, port)
 
 	publicFS, err := fs.Sub(content, "public")
