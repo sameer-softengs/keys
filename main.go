@@ -1,12 +1,14 @@
 package main
 
 import (
+	"crypto/rand"
 	"embed"
 	"encoding/json"
 	"fmt"
 	"io/fs"
 	"net"
 	"net/http"
+	"net/url"
 	"os/exec"
 	"runtime"
 	"sync"
@@ -20,12 +22,20 @@ import (
 var content embed.FS
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool {
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			return true
+		}
+		parsedOrigin, err := url.Parse(origin)
+		return err == nil && parsedOrigin.Host == r.Host
+	},
 }
 
 var (
-	activeConn *websocket.Conn
-	connMutex  sync.Mutex
+	activeConn   *websocket.Conn
+	connMutex    sync.Mutex
+	pairingToken string
 )
 
 type InputMessage struct {
@@ -38,9 +48,10 @@ type InputMessage struct {
 }
 
 func main() {
+	pairingToken = generatePairingToken()
 	localIP := getLocalIP()
 	port := "3020"
-	mobileURL := fmt.Sprintf("http://%s:%s", localIP, port)
+	mobileURL := fmt.Sprintf("http://%s:%s/?session=%s", localIP, port, pairingToken)
 
 	publicFS, err := fs.Sub(content, "public")
 	if err != nil {
@@ -84,6 +95,11 @@ func main() {
 }
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Query().Get("session") != pairingToken {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	connMutex.Lock()
 	if activeConn != nil {
 		connMutex.Unlock()
@@ -173,6 +189,14 @@ func getLocalIP() string {
 		}
 	}
 	return "localhost"
+}
+
+func generatePairingToken() string {
+	token := make([]byte, 32)
+	if _, err := rand.Read(token); err != nil {
+		panic(fmt.Errorf("failed to generate pairing token: %w", err))
+	}
+	return fmt.Sprintf("%x", token)
 }
 
 func openBrowser(url string) {

@@ -35,7 +35,7 @@ function fetchQR() {
 
   if (!qrImg || !urlText) return;
 
-  const localUrl = window.location.origin;
+  const localUrl = window.location.href;
   urlText.innerText = localUrl;
   // Point to /api/qrcode matching your Go backend
   qrImg.src = `/api/qrcode?url=${encodeURIComponent(localUrl)}`;
@@ -100,7 +100,9 @@ function initMobileRemote() {
   let reconnectInterval = null;
 
   // Retrieve or generate persistent session token
-  let sessionToken = localStorage.getItem("cyber_remote_session");
+  let sessionToken = new URLSearchParams(window.location.search).get("session");
+  if (sessionToken) localStorage.setItem("cyber_remote_session", sessionToken);
+  sessionToken = sessionToken || localStorage.getItem("cyber_remote_session");
   if (!sessionToken) {
     sessionToken =
       "sess_" + Math.random().toString(36).substring(2) + Date.now().toString(36);
